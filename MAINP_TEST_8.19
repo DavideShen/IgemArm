@@ -1,0 +1,14 @@
+import time
+import takephoto
+import PngRead
+import control
+import countbyhand as CO
+import numpy as np
+
+
+if __name__ == "__main__":
+    # 设置摄像头拍照路径
+    picturepath=takephoto.capture_photo()
+    df_result = process_blue_area(picturepath)
+    df_result.to_csv('result.csv', index=False)
+

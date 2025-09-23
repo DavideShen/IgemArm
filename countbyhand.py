@@ -61,7 +61,7 @@ def calculate_all_angles(x,y,z):
 
 def anglecommandgenerator(x,y,z,speed=0,acc=10):
     angles=calculate_all_angles(x,y,z)
-    command={"T":102,"base":angles["base"],"shoulder":angles["shoulder"],"elbow":angles["elbow"],"wrist":math.pi-angles["elbow"]-angles["shoulder"]-0.1,"roll":angles["base"],"hand":3.14,"spd":speed,"acc":acc}
+    command={"T":102,"base":angles["base"],"shoulder":angles["shoulder"],"elbow":angles["elbow"],"wrist":math.pi-angles["elbow"]-angles["shoulder"]-0.1,"roll":angles["base"]-3.14/2,"hand":3.14,"spd":speed,"acc":acc}
     return command
     
 

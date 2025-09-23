@@ -7,6 +7,7 @@ import numpy as np
 import CoordinateConvert__XY as CXY
 import WenxingCircle as WC
 import csv
+import math
 
 def read_coordinates_csv(file_path):
     """
@@ -29,6 +30,37 @@ def read_coordinates_csv(file_path):
     except FileNotFoundError:
         print(f"错误：文件 {file_path} 未找到")
     return coordinates
+def control_by_GUI(position,mm_eqal_pixel,resultpath):
+    x_offset = position['x']
+    y_offset = position['y']
+    theta_deg = 90
+    scale = mm_eqal_pixel
+    origondata=CXY.load_coordinates(resultpath)
+    transferedata=CXY.transform_coordinates(origondata,x_offset,y_offset,theta_deg,scale)
+    #CXY.plot_preview(origondata,transferedata)
+    CXY.save_results(transferedata,"transformedresult,csv")
+    WC.process_shape(
+        input_file="transformedresult,csv",
+        output_file="circle_intersections.csv",
+        radius_step=5  # 半径检测步长（单位：坐标单位）
+    )
+    pointlists=read_coordinates_csv("circle_intersections.csv")
+    # 连接串口
+    arm=control.RoArmControl()
+    arm.setPID(P=8,I=0)
+    arm.move_to_position(position['x'],position['y'],position['z'])
+    time.sleep(1)
+    lastx=pointlists[0][0]
+    lasty=pointlists[0][1]  
+    for point in pointlists:
+        distance=math.sqrt((point[0]-lastx)**2+(point[1]-lasty)**2)
+        lastx=point[0]
+        lasty=point[1]
+        x=point[0]+60  #####摄像头偏移矫正
+        y=point[1] #####摄像头偏移矫正
+        arm.move_to_position(x,y,80)   ####喷嘴高度矫正
+        time.sleep(distance/50)
+    arm.close()
 
 
 if __name__ == "__main__":
@@ -38,7 +70,7 @@ if __name__ == "__main__":
     # 读取csv文件并转换坐标系  #################
     x_offset = -15
     y_offset = 250
-    theta_deg = -90
+    theta_deg = 90
     scale = 1
     origondata=CXY.load_coordinates("Pictureredresult.csv")
     transferedata=CXY.transform_coordinates(origondata,x_offset,y_offset,theta_deg,scale)
@@ -46,7 +78,7 @@ if __name__ == "__main__":
     WC.process_shape(
         input_file="transformedresult,csv",
         output_file="circle_intersections.csv",
-        radius_step=0.5  # 半径检测步长（单位：坐标单位）
+        radius_step=10  # 半径检测步长（单位：坐标单位）
     )
     pointlists=read_coordinates_csv("circle_intersections.csv")
     # 连接串口
@@ -54,11 +86,16 @@ if __name__ == "__main__":
     arm.setPID(P=8,I=0)
     arm.move_to_position(175,0,75)
     time.sleep(1)
+    lastx=pointlists[0][0]
+    lasty=pointlists[0][1]
     for point in pointlists:
+        distance=math.sqrt((point[0]-lastx)**2+(point[1]-lasty)**2)
         x=point[0]
         y=point[1]
         arm.move_to_position(x,y,75)
-        time.sleep(1)
+        time.sleep(distance/20)
+        lastx=x
+        lasty=y
     arm.close()
 
 

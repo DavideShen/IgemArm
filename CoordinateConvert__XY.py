@@ -23,24 +23,25 @@ def load_coordinates(input_source):
 
 
 def transform_coordinates(coords, x_offset, y_offset, theta_deg, scale):
-    """坐标转换核心函数（先缩放再平移旋转）"""
+    """坐标转换核心函数（先旋转再缩放平移）"""
     theta = math.radians(theta_deg)
     cos_theta = math.cos(theta)
     sin_theta = math.sin(theta)
     transformed = []
 
     for x, y in coords:
-        # 先缩放
-        sx = x * scale
-        sy = y * scale
+        y=0-y
+        # 先旋转（逆时针）
+        rx = x * cos_theta + y * sin_theta
+        ry = -x * sin_theta + y * cos_theta
 
-        # 再平移
-        dx = sx - x_offset
-        dy = sy - y_offset
+        # 再缩放
+        sx = rx * scale
+        sy = ry * scale
 
-        # 最后旋转（逆时针）
-        new_x = dx * cos_theta + dy * sin_theta
-        new_y = -dx * sin_theta + dy * cos_theta
+        # 最后平移
+        new_x = sx + x_offset
+        new_y = sy + y_offset
 
         transformed.append((new_x, new_y))
 

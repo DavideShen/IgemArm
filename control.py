@@ -4,7 +4,34 @@ import json
 import numpy as np
 import countbyhand as CO
 
-
+class externalcontrol:
+    def __init__(self,port='COM4',baudrate=115200):
+        self.ser = serial.Serial(
+            port=port,
+            baudrate=baudrate,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            timeout=1
+        )
+        time.sleep(2)  # 等待串口初始化
+        print(f"Connected to {self.ser.name}")
+    def send_command(self, command_dict):
+        """发送JSON指令到主板"""
+        command_str = json.dumps(command_dict) + '\n'
+        self.ser.write(command_str.encode('utf-8'))
+    def close(self):
+        self.ser.close()
+    def pumpcontrol(self,contition=True,way=True,speed=255):
+        """控制吸泵"""
+        command = {
+            "T": 201,  
+            "state":speed
+        }
+        
+        response = self.ser.readline().decode().strip()
+        #if response:
+            #print(f"Received: {response}")
 class RoArmControl:
     def __init__(self, port='COM3', baudrate=115200):
         self.ser = serial.Serial(
@@ -103,7 +130,7 @@ class RoArmControl:
 if __name__ == "__main__":
     arm = RoArmControl(port='COM3')
     arm.setPID(P=8,I=0)
-    command=CO.anglecommandgenerator(175,100,75)
+    command=CO.anglecommandgenerator(175,00,75)
     arm.send_command(command)
     
     '''time.sleep(2)

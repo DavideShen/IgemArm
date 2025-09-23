@@ -44,10 +44,10 @@ def process_blue_area(image_path,output_path):
     # 阶段4：创建表格输出
     df = pd.DataFrame(coordinates, columns=["X", "Y"])
     # 可视化结果（可选）
-    '''cv2.drawContours(img, [approx_points], -1, (0, 255, 0), 2)
+    cv2.drawContours(img, [approx_points], -1, (0, 255, 0), 2)
     cv2.imshow("Result", img)
     cv2.waitKey(0)
-    cv2.destroyAllWindows()'''
+    cv2.destroyAllWindows()
     df.to_csv(output_path, index=False)
     return df
 

@@ -54,7 +54,7 @@ def read_coordinates_csv(file_path):
 class CameraApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("摄像头实时画面与伤口识别")
+        self.root.title("Camera live feed and wound recognition")
 
         # 打开摄像头
         self.cap = cv2.VideoCapture(0)
@@ -81,7 +81,7 @@ class CameraApp:
         self.e_button = ttk.Button(self.control_frame, text="E", command=lambda: self.move_camera('e'))
         self.e_button.grid(row=1, column=3)
 
-        self.confirm_button = ttk.Button(self.control_frame, text="确定", command=self.confirm_action)
+        self.confirm_button = ttk.Button(self.control_frame, text="confirm", command=self.confirm_action)
         self.confirm_button.grid(row=1, column=1, columnspan=2)
 
         # 绑定键盘事件

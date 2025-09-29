@@ -57,8 +57,18 @@ class RoArmControl:
         self.logging_thread = None
         self.stop_logging = False
         
+        # 位置和状态监听相关
+        self.current_position = [0, 0, 0]
+        self.current_joint_angles = {}
+        self.current_joint_loads = {}
+        self.position_monitoring = False
+        self.monitor_thread = None
+        
         if self.enable_logging:
             self.start_logging()
+        
+        # 启动位置监听
+        self.start_position_monitoring()
 
     def start_logging(self):
         """启动数据记录线程"""
@@ -171,6 +181,87 @@ class RoArmControl:
             print("没有数据可保存")
             return None
 
+    def start_position_monitoring(self):
+        """启动位置监听"""
+        self.position_monitoring = True
+        self.monitor_thread = threading.Thread(target=self._position_monitor_worker)
+        self.monitor_thread.daemon = True
+        self.monitor_thread.start()
+
+    def stop_position_monitoring(self):
+        """停止位置监听"""
+        self.position_monitoring = False
+        if self.monitor_thread:
+            self.monitor_thread.join(timeout=2)
+
+    def _position_monitor_worker(self):
+        """位置监听工作线程 - 增强版"""
+        while getattr(self, 'position_monitoring', False):
+            try:
+                # 持续监听串口
+                if self.ser.in_waiting > 0:
+                    response = self.ser.readline().decode().strip()
+                    if response:
+                        try:
+                            data = json.loads(response)
+                            # 检查是否为位置反馈数据 (T:1051)
+                            if data.get('T') == 1051:
+                                # 更新当前位置和状态
+                                self.current_position = [data['x'], data['y'], data['z']]
+                                self.current_joint_angles = {
+                                    'tit': data.get('tit', 0),  # 末端关节姿态
+                                    'b': data.get('b', 0),     # 基础关节
+                                    's': data.get('s', 0),     # 肩关节
+                                    'e': data.get('e', 0),     # 肘关节
+                                    't': data.get('t', 0),     # 手腕关节1
+                                    'r': data.get('r', 0),     # 手腕关节2
+                                    'g': data.get('g', 0)      # 末端关节
+                                }
+                                self.current_joint_loads = {
+                                    'tB': data.get('tB', 0),   # 基础关节负载
+                                    'tS': data.get('tS', 0),   # 肩关节负载
+                                    'tE': data.get('tE', 0),   # 肘关节负载
+                                    'tT': data.get('tT', 0),   # 手腕关节1负载
+                                    'tR': data.get('tR', 0)    # 手腕关节2负载
+                                }
+                                
+                                # 如果启用了数据记录
+                                if self.enable_logging:
+                                    timestamp = datetime.now()
+                                    data_point = {
+                                        'timestamp': timestamp,
+                                        'x': data['x'],
+                                        'y': data['y'],
+                                        'z': data['z'],
+                                        'tit': data.get('tit', 0),
+                                        'base_angle': data.get('b', 0),
+                                        'shoulder_angle': data.get('s', 0),
+                                        'elbow_angle': data.get('e', 0),
+                                        'wrist1_angle': data.get('t', 0),
+                                        'wrist2_angle': data.get('r', 0),
+                                        'end_angle': data.get('g', 0),
+                                        'base_load': data.get('tB', 0),
+                                        'shoulder_load': data.get('tS', 0),
+                                        'elbow_load': data.get('tE', 0),
+                                        'wrist1_load': data.get('tT', 0),
+                                        'wrist2_load': data.get('tR', 0)
+                                    }
+                                    self.position_data.append(data_point)
+                        except (json.JSONDecodeError, KeyError) as e:
+                            print(f"Data parsing error: {e}")
+            
+                time.sleep(0.01)  # 10ms间隔
+            except Exception as e:
+                print(f"Position monitoring error: {e}")
+                time.sleep(0.1)
+
+    def get_current_joint_status(self):
+        """获取当前关节状态"""
+        return {
+            'position': self.current_position.copy(),
+            'joint_angles': self.current_joint_angles.copy(),
+            'joint_loads': self.current_joint_loads.copy()
+        }
         
  #zeropoint       (175,0,75)
  # centerpoint  (250,-15,75)

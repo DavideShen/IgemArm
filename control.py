@@ -3,6 +3,11 @@ import time
 import json
 import numpy as np
 import countbyhand as CO
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
+import threading
+import queue
 
 class externalcontrol:
     def __init__(self,port='COM4',baudrate=115200):
@@ -33,7 +38,7 @@ class externalcontrol:
         #if response:
             #print(f"Received: {response}")
 class RoArmControl:
-    def __init__(self, port='COM3', baudrate=115200):
+    def __init__(self, port='COM3', baudrate=115200, enable_logging=True):
         self.ser = serial.Serial(
             port=port,
             baudrate=baudrate,
@@ -42,19 +47,52 @@ class RoArmControl:
             stopbits=serial.STOPBITS_ONE,
             timeout=1
         )
-        time.sleep(2)  # 等待串口初始化
+        time.sleep(2)
         print(f"Connected to {self.ser.name}")
+        
+        # 数据记录相关
+        self.enable_logging = enable_logging
+        self.position_data = []
+        self.data_queue = queue.Queue()
+        self.logging_thread = None
+        self.stop_logging = False
+        
+        if self.enable_logging:
+            self.start_logging()
+
+    def start_logging(self):
+        """启动数据记录线程"""
+        self.stop_logging = False
+        self.logging_thread = threading.Thread(target=self._logging_worker)
+        self.logging_thread.daemon = True
+        self.logging_thread.start()
+
+    def _logging_worker(self):
+        """数据记录工作线程"""
+        while not self.stop_logging:
+            try:
+                # 定期获取当前位置
+                current_pos = self.getcurrentposition()
+                if current_pos:
+                    timestamp = datetime.now()
+                    data_point = {
+                        'timestamp': timestamp,
+                        'x': current_pos[0],
+                        'y': current_pos[1],
+                        'z': current_pos[2]
+                    }
+                    self.position_data.append(data_point)
+                time.sleep(0.02)  # 50Hz采样率 (提高频率)
+            except Exception as e:
+                print(f"Logging error: {e}")
+                time.sleep(0.1)
 
     def send_command(self, command_dict):
         """发送JSON指令到机械臂"""
         command_str = json.dumps(command_dict) + '\n'
         self.ser.write(command_str.encode('utf-8'))
-        #print(f"Sent: {command_str.strip()}")
-
-        
         response = self.ser.readline().decode().strip()
-        #if response:
-            #print(f"Received: {response}")
+        return response
 
     def set_end_position(self, x, y, z,t=3.1415/2,g=3.14,speed=0):
         """设置末端执行器位置（单位：毫米）"""
@@ -72,6 +110,9 @@ class RoArmControl:
         self.send_command(command)
 
     def close(self):
+        self.stop_logging = True
+        if self.logging_thread:
+            self.logging_thread.join(timeout=2)
         self.ser.close()
         print("Serial connection closed")
 
@@ -88,19 +129,14 @@ class RoArmControl:
 
     def getcurrentposition(self):
         """获取当前末端执行器位置"""
-        command = {
-            "T": 105
-        }
-        self.send_command(command)
-        response=  self.ser.readline().decode().strip()
-        print(response)
+        command = {"T": 105}
+        response = self.send_command(command)
         try:
             data = json.loads(response)
             return [data['x'], data['y'], data['z']]
-        except json.JSONDecodeError:
-            print("Failed to decode JSON response")
+        except (json.JSONDecodeError, KeyError):
             return None
-   
+
     def move_to_position_straight(self,startpoint,endpoint,gap=10):
         """移动到指定位置"""
         # 301: 末端位置控制指令
@@ -120,6 +156,20 @@ class RoArmControl:
     def move_to_position(self,x,y,z):
         command=CO.anglecommandgenerator(x,y,z)
         self.send_command(command)
+
+    def save_position_data(self, filename=None):
+        """保存位置数据到CSV文件"""
+        if not filename:
+            filename = f"arm_position_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+        if self.position_data:
+            df = pd.DataFrame(self.position_data)
+            df.to_csv(filename, index=False)
+            print(f"位置数据已保存到: {filename}")
+            return filename
+        else:
+            print("没有数据可保存")
+            return None
 
         
  #zeropoint       (175,0,75)

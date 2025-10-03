@@ -55,13 +55,10 @@ class CameraApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Camera live feed and wound recognition")
-<<<<<<< HEAD
 
         # 设置窗口大小和最小尺寸
         self.root.geometry("800x900")
         self.root.minsize(600, 700)
-=======
->>>>>>> 34441f84ac69a2c21e53d8687b8db836bddba1b4
 
         # 打开摄像头
         self.cap = cv2.VideoCapture(0)
@@ -222,15 +219,10 @@ class CameraApp:
         self.d_button = ttk.Button(self.direction_frame, text="D", command=lambda: self.move_camera('d'))
         self.d_button.grid(row=0, column=3, padx=2, pady=2)
 
-<<<<<<< HEAD
         self.q_button = ttk.Button(self.direction_frame, text="Q", command=lambda: self.move_camera('q'))
         self.q_button.grid(row=1, column=0, padx=2, pady=2)
         self.e_button = ttk.Button(self.direction_frame, text="E", command=lambda: self.move_camera('e'))
         self.e_button.grid(row=1, column=3, padx=2, pady=2)
-=======
-        self.confirm_button = ttk.Button(self.control_frame, text="confirm", command=self.confirm_action)
-        self.confirm_button.grid(row=1, column=1, columnspan=2)
->>>>>>> 34441f84ac69a2c21e53d8687b8db836bddba1b4
 
         # 绑定键盘事件
         self.root.bind('<Key>', self.on_key_press)

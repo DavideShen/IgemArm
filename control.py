@@ -104,7 +104,7 @@ class RoArmControl:
         response = self.ser.readline().decode().strip()
         return response
 
-    def set_end_position(self, x, y, z,t=3.1415/2,g=3.14,speed=0):
+    def set_end_position(self, x, y, z,t=3.1415/2,g=3.14,speed=0.08):
         """设置末端执行器位置（单位：毫米）"""
         # 301: 末端位置控制指令
         # speed: 0-255 (0最快，255最慢)
@@ -248,7 +248,7 @@ class RoArmControl:
                                     }
                                     self.position_data.append(data_point)
                         except (json.JSONDecodeError, KeyError) as e:
-                            print(f"Data parsing error: {e}")
+                            1==1
             
                 time.sleep(0.01)  # 10ms间隔
             except Exception as e:
@@ -271,9 +271,46 @@ class RoArmControl:
 if __name__ == "__main__":
     arm = RoArmControl(port='COM3')
     arm.setPID(P=8,I=0)
-    command=CO.anglecommandgenerator(175,00,75)
+    command=CO.anglecommandgenerator(175,100,75)
     arm.send_command(command)
+    point=(175,100,75)
     
+    while True:
+        print("请输入移动方式:")
+        print("1.直接移动104")
+        print("2.曲线移动102")
+  
+        print("5.退出")
+        choice=input("请输入移动方式:")
+        
+        if choice=="1":
+            while True:
+                try:
+                    
+                    arm.set_end_position(point[0],point[1],point[2])
+                    movelength=float(input("请输入移动长度:"))
+                    arm.set_end_position(point[0]+movelength,point[1]+movelength,point[2])
+                    time.sleep(3)
+                except ValueError:
+                    break
+           
+
+
+        if choice=="2":
+            while True:
+                try:
+                    
+                    arm.move_to_position(point[0],point[1],point[2])
+                    movelength=float(input("请输入移动长度:"))
+                    arm.move_to_position(point[0]+movelength,point[1]+movelength,point[2])
+                    time.sleep(3)
+                except ValueError:
+                    break
+        if choice=="5":
+            break
+        
+        
+        
     '''time.sleep(2)
     startpoint=np.array([175,-100,75])
     endpoint=np.array([175,100,100])

@@ -1,0 +1,87 @@
+{
+    "camera": {
+        "offset_x": 55.0,
+        "offset_y": -30.0,
+        "nozzle_height": 95.0,
+        "device_id": 0,
+        "resolution": [
+            640,
+            480
+        ],
+        "fps": 30
+    },
+    "image_processing": {
+        "hsv_red1_lower": [
+            1,
+            70,
+            50
+        ],
+        "hsv_red1_upper": [
+            10,
+            255,
+            255
+        ],
+        "hsv_red2_lower": [
+            170,
+            70,
+            50
+        ],
+        "hsv_red2_upper": [
+            180,
+            255,
+            255
+        ],
+        "contour_epsilon_factor": 0.002,
+        "min_contour_area": 100,
+        "gaussian_blur_kernel": [
+            3,
+            3
+        ],
+        "clahe_clip_limit": 1.5,
+        "clahe_tile_grid_size": [
+            8,
+            8
+        ]
+    },
+    "calibration": {
+        "distance_mm": 40.0,
+        "max_attempts": 5,
+        "min_successful": 3,
+        "min_pixel_distance": 10.0,
+        "max_pixel_distance": 200.0,
+        "stability_checks": 3,
+        "max_cv_threshold": 0.1
+    },
+    "robot": {
+        "port": "COM3",
+        "baudrate": 115200,
+        "timeout": 1.0,
+        "pid_p": 8.0,
+        "pid_i": 0.0,
+        "default_speed": 0.08,
+        "default_acceleration": 10.0,
+        "workspace_bounds": {
+            "x": [
+                -200,
+                400
+            ],
+            "y": [
+                -200,
+                200
+            ],
+            "z": [
+                50,
+                300
+            ]
+        }
+    },
+    "treatment": {
+        "movement_speed": 50.0,
+        "treatment_time": 0.5,
+        "radius_step": 5.0,
+        "min_treatment_distance": 1.0
+    },
+    "log_level": "INFO",
+    "enable_logging": true,
+    "data_save_path": "./data"
+}

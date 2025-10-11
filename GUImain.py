@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk
 import cv2
 from PIL import Image, ImageTk
-import subprocess
 import threading
 import numpy as np
 import pandas as pd
@@ -10,7 +9,6 @@ import control
 import time
 import math
 import os
-import MAINCONTROL as MC
 import sys
 import CoordinateConvert__XY as CXY
 import WenxingCircle as WC
@@ -21,7 +19,7 @@ num=0
 output_path = "coordinates.csv"
 h,w=0,0
 image=0
-postion={"x":150,"y":0,"z":180}
+position={"x":150,"y":0,"z":180}
 Counter=0
 try:
     arm=control.RoArmControl()
@@ -325,19 +323,19 @@ class CameraApp:
         # 这里你可以添加调用外部程序控制摄像头移动的代码
         # 例如使用subprocess调用一个控制摄像头的脚本或程序
         if direction == 'w':
-            postion["x"] += 10
+            position["x"] += 10
         elif direction == 'a':
-            postion["y"] += 10
+            position["y"] += 10
         elif direction == 's':  
-            postion["x"] -= 10
+            position["x"] -= 10
         elif direction == 'd':
-            postion["y"] -= 10
+            position["y"] -= 10
         elif direction == 'q':
-            postion["z"] -= 10
+            position["z"] -= 10
         elif direction == 'e':
-            postion["z"] += 10
+            position["z"] += 10
         
-        arm.move_to_position(postion["x"],postion["y"],postion["z"])
+        arm.move_to_position(position["x"],position["y"],position["z"])
         print(f"Moving camera {direction}")
         time.sleep(0.1)
 
@@ -391,11 +389,11 @@ class CameraApp:
                 print(f"当前位置伤口中心: ({old_center[0]:.2f}, {old_center[1]:.2f})")
                 
                 # 2. 移动机械臂
-                target_y = postion['y'] - calibration_params['distance']
-                print(f"移动机械臂到: ({postion['x']}, {target_y}, {postion['z']})")
+                target_y = position['y'] - calibration_params['distance']
+                print(f"移动机械臂到: ({position['x']}, {target_y}, {position['z']})")
                 
-                arm.move_to_position(postion['x'], target_y, postion['z'])
-                postion["y"] = target_y
+                arm.move_to_position(position['x'], target_y, position['z'])
+                position["y"] = target_y
                 
                 # 等待机械臂稳定
                 time.sleep(2)
@@ -405,8 +403,8 @@ class CameraApp:
                 if new_center is None:
                     print(f"标定尝试 {attempt} 失败：移动后无法检测到伤口中心")
                     # 返回原位置
-                    arm.move_to_position(postion['x'], postion['y'] + calibration_params['distance'], postion['z'])
-                    postion["y"] += calibration_params['distance']
+                    arm.move_to_position(position['x'], position['y'] + calibration_params['distance'], position['z'])
+                    position["y"] += calibration_params['distance']
                     continue
                 
                 print(f"新位置伤口中心: ({new_center[0]:.2f}, {new_center[1]:.2f})")
@@ -420,14 +418,14 @@ class CameraApp:
                 # 5. 验证像素距离是否合理
                 if pixel_distance < calibration_params['min_pixel_distance']:
                     print(f"标定尝试 {attempt} 失败：像素距离过小 ({pixel_distance:.2f}px)")
-                    arm.move_to_position(postion['x'], postion['y'] + calibration_params['distance'], postion['z'])
-                    postion["y"] += calibration_params['distance']
+                    arm.move_to_position(position['x'], position['y'] + calibration_params['distance'], position['z'])
+                    position["y"] += calibration_params['distance']
                     continue
                 
                 if pixel_distance > calibration_params['max_pixel_distance']:
                     print(f"标定尝试 {attempt} 失败：像素距离过大 ({pixel_distance:.2f}px)")
-                    arm.move_to_position(postion['x'], postion['y'] + calibration_params['distance'], postion['z'])
-                    postion["y"] += calibration_params['distance']
+                    arm.move_to_position(position['x'], position['y'] + calibration_params['distance'], position['z'])
+                    position["y"] += calibration_params['distance']
                     continue
                 
                 # 6. 计算比例
@@ -441,19 +439,19 @@ class CameraApp:
                 self.root.after(0, lambda: self.calibration_status_label.config(text=f"标定尝试 {attempt} 成功：比例 = {scale:.4f}"))
                 
                 # 7. 返回原位置
-                arm.move_to_position(postion['x'], postion['y'] + calibration_params['distance'], postion['z'])
-                postion["y"] += calibration_params['distance']
-            time.sleep(1)
+                arm.move_to_position(position['x'], position['y'] + calibration_params['distance'], position['z'])
+                position["y"] += calibration_params['distance']
+                time.sleep(1)
                 
                 # 更新摄像头显示
-            self.update_camera()
+                self.update_camera()
                 
             except Exception as e:
                 print(f"标定尝试 {attempt} 异常：{e}")
                 # 尝试返回安全位置
                 try:
-                    arm.move_to_position(postion['x'], postion['y'] + calibration_params['distance'], postion['z'])
-                    postion["y"] += calibration_params['distance']
+                    arm.move_to_position(position['x'], position['y'] + calibration_params['distance'], position['z'])
+                    position["y"] += calibration_params['distance']
                 except:
                     pass
                 continue
@@ -558,19 +556,19 @@ class CameraApp:
             print("标定完成，开始后续处理...")
             
             # 坐标转换
-        x_offset = postion['x']
-        y_offset = postion['y']
-        theta_deg = 90
+            x_offset = position['x']
+            y_offset = position['y']
+            theta_deg = 90
         
             origondata = CXY.load_coordinates(output_path)
             transferedata = CXY.transform_coordinates(origondata, x_offset, y_offset, theta_deg, average_scale)
-            CXY.save_results(transferedata, "transformedresult,csv")
+            CXY.save_results(transferedata, "transformedresult.csv")
             
             # 生成治疗路径
-        WC.process_shape(
-        input_file="transformedresult,csv",
-        output_file="circle_intersections.csv",
-        radius_step=5  # 半径检测步长（单位：坐标单位）
+            WC.process_shape(
+            input_file="transformedresult.csv",
+            output_file="circle_intersections.csv",
+            radius_step=5  # 半径检测步长（单位：坐标单位）
         )
             
             # 执行治疗路径
@@ -607,7 +605,7 @@ class CameraApp:
         
         # 设置机械臂参数
         arm.setPID(P=8, I=0)
-        arm.move_to_position(postion['x'], postion['y'], postion['z'])
+        arm.move_to_position(position['x'], position['y'], position['z'])
         time.sleep(1)
         
         # 治疗参数
@@ -747,10 +745,11 @@ class CameraApp:
         except Exception as e:
             print(f"更新紧急停止显示失败：{e}")
     
-    def Savetheshape(self,coordinates):
+    def Savetheshape(self, coordinates):
+        """保存形状坐标到CSV文件"""
         df = pd.DataFrame(coordinates, columns=["X", "Y"])
-        
-
+        df.to_csv(output_path, index=False)
+        print(f"形状坐标已保存到 {output_path}")
 
     def on_key_press(self, event):
         key = event.keysym.lower()
@@ -853,6 +852,9 @@ class CameraApp:
         """更新的摄像头函数"""
         ret, frame = self.cap.read()
         if ret:
+            coordinates = None
+            center_point = None
+            
             # 根据预览开关决定是否进行检测
             if self.preview_var.get():
                 # 使用灵敏度参数进行检测
@@ -921,39 +923,39 @@ class CameraApp:
                 epsilon = self.sensitivity_params['epsilon_factor'] * cv2.arcLength(max_contour, True)
                 approx_points = cv2.approxPolyDP(max_contour, epsilon, True)
                 
-                        # 计算相对于图像中心的坐标
-                        h, w = frame.shape[:2]
-                        cx, cy = w // 2, h // 2
-                        coordinates = [(point[0][0] - cx, point[0][1] - cy) for point in approx_points]
-                        
-                        # 计算质心
-                        x_sum, y_sum = 0, 0
-                        for points in coordinates:
-                            x_sum += points[0]
-                            y_sum += points[1]
-                        center_point = (x_sum/len(coordinates), y_sum/len(coordinates))
-                        
+                # 计算相对于图像中心的坐标
+                h, w = frame.shape[:2]
+                cx, cy = w // 2, h // 2
+                coordinates = [(point[0][0] - cx, point[0][1] - cy) for point in approx_points]
+                
+                # 计算质心
+                x_sum, y_sum = 0, 0
+                for points in coordinates:
+                    x_sum += points[0]
+                    y_sum += points[1]
+                center_point = (x_sum/len(coordinates), y_sum/len(coordinates))
+                
                 # 绘制轮廓
-                        cv2.drawContours(frame, [max_contour], -1, (0, 255, 0), 2)
-                        cv2.drawContours(frame, [approx_points], -1, (255, 0, 0), 2)
-                        
-                        # 绘制边界点
-                        for point in approx_points:
-                            cv2.circle(frame, tuple(point[0]), 3, (255, 255, 0), -1)
-                        
+                cv2.drawContours(frame, [max_contour], -1, (0, 255, 0), 2)
+                cv2.drawContours(frame, [approx_points], -1, (255, 0, 0), 2)
+                
+                # 绘制边界点
+                for point in approx_points:
+                    cv2.circle(frame, tuple(point[0]), 3, (255, 255, 0), -1)
+                
                 # 显示轮廓信息和当前参数
                 area = cv2.contourArea(max_contour)
-                        info_text = f"Area: {int(area)}, Points: {len(approx_points)}"
+                info_text = f"Area: {int(area)}, Points: {len(approx_points)}"
                 param_text = f"H:{self.sensitivity_params['h_min']}-{self.sensitivity_params['h_max']} " \
                            f"S:{self.sensitivity_params['s_min']}-{self.sensitivity_params['s_max']} " \
                            f"V:{self.sensitivity_params['v_min']}-{self.sensitivity_params['v_max']}"
                 
-                        cv2.putText(frame, info_text, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 
-                                   0.6, (255, 255, 255), 2)
+                cv2.putText(frame, info_text, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 
+                           0.6, (255, 255, 255), 2)
                 cv2.putText(frame, param_text, (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 
                            0.4, (200, 200, 200), 1)
-                        
-                        return coordinates, center_point
+                
+                return coordinates, center_point
         
         return None, None
     def caculate_center(self):
@@ -1012,7 +1014,7 @@ class CameraApp:
 
 if __name__ == "__main__":
     try:
-        arm.move_to_position(postion['x'],postion['y'],postion['z'])
+        arm.move_to_position(position['x'],position['y'],position['z'])
     except:
         print("机械臂连接失败，请检查连接")
     time.sleep(1)
